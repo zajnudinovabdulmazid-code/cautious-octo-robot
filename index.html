@@ -1,113 +1,23 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Тест: кнопка → звук + таймер</title>
-<style>
-  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font-family:Arial, sans-serif;background:#111;color:#fff}
-  .card{width:100%;max-width:720px;padding:28px;border-radius:12px;background:linear-gradient(180deg,#101010,#151515);box-shadow:0 12px 40px rgba(0,0,0,0.6);text-align:center}
-  h1{margin:0 0 8px;color:#ddd}
-  p{margin:0 0 18px;color:#aaa}
-  button{background:#d62828;border:0;padding:18px 36px;border-radius:10px;color:#fff;font-size:20px;cursor:pointer}
-  button[disabled]{opacity:.6;cursor:not-allowed}
-  #timer{margin-top:18px;font-size:40px;font-weight:700}
-  #log{margin-top:12px;color:#bbb;font-size:13px}
-</style>
+  <meta charset="utf-8">
+  <title>30-секундное шоу</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card" role="main">
-    <h1>Нажми кнопку</h1>
-    <p>Должны запуститься звук и 30-сек таймер.</p>
-
-    <button id="btn">Запустить шоу</button>
-
-    <div id="timer">30.0 s</div>
-    <div id="log">Ожидание запуска</div>
+  <div class="card">
+    <h1>Нажми большую красную кнопку</h1>
+    <p>Кнопка запустит 30-секундное шоу.</p>
+    <button id="startBtn">Запустить</button>
+    <div id="timer">30.0</div>
+    <div id="photos"></div>
   </div>
 
-  <!-- Положи сюда свой файл: assets/main-song.mp3 -->
-  <audio id="mainAudio" preload="auto">
-    <source src="assets/main-song.mp3" type="audio/mpeg">
-  </audio>
+  <!-- Аудио -->
+  <audio id="mainAudio" src="assets/main-song.mp3" preload="auto"></audio>
+  <audio id="finalAudio" src="assets/final-song.mp3" preload="auto"></audio>
 
-<script>
-(function(){
-  const DURATION = 30_000; // миллисекунды
-  const btn = document.getElementById('btn');
-  const timerEl = document.getElementById('timer');
-  const logEl = document.getElementById('log');
-  const audio = document.getElementById('mainAudio');
-
-  let started = false;
-  let startTs = 0;
-
-  // Показываем лог (и console.log)
-  function log(msg){
-    console.log(msg);
-    logEl.textContent = msg;
-  }
-
-  // Универсальная функция старта таймера (работает даже если аудио не запустилось)
-  function startTimer() {
-    startTs = performance.now();
-    const endTs = startTs + DURATION;
-
-    function frame() {
-      const now = performance.now();
-      const remain = Math.max(0, endTs - now);
-      timerEl.textContent = (remain / 1000).toFixed(1) + ' s';
-
-      if (remain > 0) {
-        requestAnimationFrame(frame);
-      } else {
-        timerEl.textContent = 'Конец!';
-        log('Таймер завершён.');
-        // Место для действий после окончания (например, переключить аудио/показать фото)
-      }
-    }
-    requestAnimationFrame(frame);
-  }
-
-  // Обработчик клика — пользовательское действие
-  btn.addEventListener('click', async () => {
-    if (started) return;
-    started = true;
-    btn.disabled = true;
-    log('Запуск...');
-
-    // Сначала пытаемся запустить аудио — но если play() выбросит ошибку,
-    // мы всё равно запустим таймер ниже (в finally).
-    try {
-      audio.volume = 1.0; // максимум по Web Audio API
-      audio.currentTime = 0;
-      await audio.play();
-      log('Аудио запущено успешно.');
-    } catch (err) {
-      // Частая причина: неправильный путь к файлу или политика браузера.
-      console.error('Ошибка при play():', err);
-      // Показываем пользователю предупреждение, но не мешаем таймеру стартовать.
-      alert('Аудио не удалось проиграть. Проверь путь к файлу в assets/main-song.mp3 или разрешения браузера.');
-      log('Аудио не запущено (см. консоль). Таймер всё равно стартует.');
-    } finally {
-      // запускаем таймер в любом случае
-      startTimer();
-    }
-  });
-
-  // Полезные проверки, которые можно увидеть в консоли
-  // Проверяем, что у audio есть хотя бы один источник
-  if (!audio.querySelector('source')) {
-    console.warn('В <audio> нет <source>. Положи файл assets/main-song.mp3 и убедись в названии.');
-    log('Внимание: audio source не найден.');
-  } else {
-    console.log('Audio source обнаружен:', audio.querySelector('source').src);
-  }
-
-  // hint: если у тебя не работает локально, запусти простой локальный сервер:
-  // python -m http.server 8000
-  // и открой http://localhost:8000 в браузере.
-})();
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
