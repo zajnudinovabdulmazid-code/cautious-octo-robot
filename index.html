@@ -1,115 +1,27 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <title>30-секундное шоу</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #111;
-      color: #fff;
-    }
-    .card {
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    button {
-      background: red;
-      border: none;
-      padding: 15px 30px;
-      font-size: 20px;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    #timer {
-      font-size: 32px;
-      margin-top: 15px;
-    }
-    #photos img {
-      max-width: 100%;
-      margin-top: 15px;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>30‑секундное шоу</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card">
-    <h1>Нажми большую красную кнопку</h1>
-    <p>Кнопка запустит 30-секундное шоу.</p>
-    <button id="startBtn">Запустить</button>
-    <div id="timer">30.0</div>
-    <div id="photos"></div>
-  </div>
+  <main class="card" role="main" aria-labelledby="title">
+    <h1 id="title">Нажми большую красную кнопку</h1>
+    <p>Кнопка запустит 30‑секундное шоу.</p>
 
-  <!-- Аудио -->
-  <audio id="mainAudio" src="assets/main-song.mp3" preload="auto"></audio>
-  <audio id="finalAudio" src="assets/final-song.mp3" preload="auto"></audio>
+    <button id="startBtn" class="big-btn" aria-pressed="false">Запустить</button>
 
-  <script>
-    const btn = document.getElementById("startBtn");
-    const timerEl = document.getElementById("timer");
-    const photosEl = document.getElementById("photos");
+    <div id="timer" aria-live="polite">30.0</div>
 
-    const mainAudio = document.getElementById("mainAudio");
-    const finalAudio = document.getElementById("finalAudio");
+    <div id="photos" class="photos" aria-hidden="true"></div>
 
-    let started = false;
+    <!-- Аудио (пути — в папке assets/) -->
+    <audio id="mainAudio" src="assets/main-song.mp3" preload="auto"></audio>
+    <audio id="finalAudio" src="assets/final-song.mp3" preload="auto"></audio>
+  </main>
 
-    btn.addEventListener("click", async () => {
-      if (started) return;
-      started = true;
-      btn.disabled = true;
-      btn.textContent = "Идёт...";
-
-      try {
-        await mainAudio.play();
-      } catch (e) {
-        console.log("Ошибка запуска звука:", e);
-      }
-
-      let timeLeft = 30.0;
-      timerEl.textContent = timeLeft.toFixed(1);
-
-      const interval = setInterval(() => {
-        timeLeft -= 0.1;
-        timerEl.textContent = Math.max(0, timeLeft).toFixed(1);
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          finishShow();
-        }
-      }, 100);
-    });
-
-    function finishShow() {
-      mainAudio.pause();
-      mainAudio.currentTime = 0;
-
-      finalAudio.volume = 1.0;
-      finalAudio.loop = true;
-      finalAudio.play();
-
-      const images = [
-        "assets/final1.jpg",
-        "assets/final2.jpg",
-        "assets/final3.jpg"
-      ];
-      let i = 0;
-      setInterval(() => {
-        photosEl.innerHTML = <img src="${images[i]}" alt="final">;
-        i = (i + 1) % images.length;
-      }, 2000);
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
