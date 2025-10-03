@@ -1,0 +1,33 @@
+body {
+  margin:0;
+  font-family:sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  background:#111;
+  color:#fff;
+}
+.card {
+  background:#222;
+  padding:20px;
+  border-radius:10px;
+  text-align:center;
+}
+button {
+  background:red;
+  border:none;
+  padding:15px 30px;
+  font-size:20px;
+  color:white;
+  border-radius:8px;
+  cursor:pointer;
+}
+#timer {
+  font-size:32px;
+  margin-top:15px;
+}
+#photos img {
+  max-width:100%;
+  margin-top:15px;
+}
