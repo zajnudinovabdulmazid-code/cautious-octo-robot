@@ -1,188 +1,112 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Шоу — 30 секунд</title>
-  <style>
-    :root{--bg:#0b0b0b;--red:#d62828;--muted:#cfcfcf;--white:#fff}
-    html,body{height:100%;margin:0;font-family:Inter, Arial, sans-serif;background:var(--bg);color:var(--white)}
-    .stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
-    .card{width:100%;max-width:900px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border-radius:12px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.6);position:relative;overflow:hidden}
-    h1{margin:0 0 8px 0;font-size:20px;color:var(--muted)}
-    .lead{margin:0 0 18px 0;color:var(--muted);font-size:13px}
-    button.big{background:linear-gradient(180deg,var(--red),#b02121);color:#fff;border:0;padding:26px 44px;font-size:28px;border-radius:12px;cursor:pointer;font-weight:700;box-shadow:0 10px 30px rgba(214,40,40,0.25)}
-    button.big[disabled]{opacity:0.6;cursor:not-allowed}
-    .status{display:flex;gap:12px;align-items:center;margin-top:14px;color:var(--muted)}
-    .timer{font-weight:800;font-size:20px;color:#fff;background:rgba(0,0,0,0.25);padding:8px 12px;border-radius:8px}
-    /* viewer */
-    .viewer{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:40;pointer-events:none;opacity:0;transition:opacity .25s}
-    .viewer.show{opacity:1;pointer-events:auto}
-    .viewer img{max-width:100%;max-height:100%;object-fit:cover;display:none;transition:opacity .5s}
-    .viewer img.show{display:block;opacity:1}
-    .badge{position:absolute;left:12px;top:12px;background:rgba(0,0,0,0.45);padding:8px 10px;border-radius:8px;color:var(--muted);font-weight:700}
-    .footer{position:absolute;right:12px;bottom:12px;color:var(--muted);font-size:12px}
-    @media (max-width:600px){button.big{padding:18px 28px;font-size:20px}}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Тест: кнопка → звук + таймер</title>
+<style>
+  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;font-family:Arial, sans-serif;background:#111;color:#fff}
+  .card{width:100%;max-width:720px;padding:28px;border-radius:12px;background:linear-gradient(180deg,#101010,#151515);box-shadow:0 12px 40px rgba(0,0,0,0.6);text-align:center}
+  h1{margin:0 0 8px;color:#ddd}
+  p{margin:0 0 18px;color:#aaa}
+  button{background:#d62828;border:0;padding:18px 36px;border-radius:10px;color:#fff;font-size:20px;cursor:pointer}
+  button[disabled]{opacity:.6;cursor:not-allowed}
+  #timer{margin-top:18px;font-size:40px;font-weight:700}
+  #log{margin-top:12px;color:#bbb;font-size:13px}
+</style>
 </head>
 <body>
-  <div class="stage">
-    <div class="card" role="main" aria-labelledby="title">
-      <h1 id="title">Нажми большую красную кнопку</h1>
-      <p class="lead">Кнопка запустит 30-секундное шоу.</p>
+  <div class="card" role="main">
+    <h1>Нажми кнопку</h1>
+    <p>Должны запуститься звук и 30-сек таймер.</p>
 
-      <button id="startBtn" class="big" aria-pressed="false">Нажми меня</button>
+    <button id="btn">Запустить шоу</button>
 
-      <div class="status" aria-live="polite">
-        <div class="timer" id="timer">30.0 s</div>
-        <div id="stateText">Готово</div>
-      </div>
-
-      <div class="viewer" id="viewer" aria-hidden="true">
-        <!-- scary images во время таймера -->
-        <img id="sc1" src="assets/scary1.jpg" alt="scary 1">
-        <img id="sc2" src="assets/scary2.jpg" alt="scary 2">
-        <img id="sc3" src="assets/scary3.jpg" alt="scary 3">
-
-        <!-- final images (будут показаны после окончания) -->
-        <img id="f1" src="assets/final1.jpg" alt="final 1">
-        <img id="f2" src="assets/final2.jpg" alt="final 2">
-        <img id="f3" src="assets/final3.jpg" alt="final 3">
-
-        <div class="badge" id="badge">30 s</div>
-      </div>
-
-      <div class="footer">От: Абдулмажид</div>
-    </div>
+    <div id="timer">30.0 s</div>
+    <div id="log">Ожидание запуска</div>
   </div>
 
-  <!-- Аудио -->
+  <!-- Положи сюда свой файл: assets/main-song.mp3 -->
   <audio id="mainAudio" preload="auto">
     <source src="assets/main-song.mp3" type="audio/mpeg">
   </audio>
 
-  <audio id="finalAudio" preload="auto">
-    <source src="assets/final-song.mp3" type="audio/mpeg">
-  </audio>
-
 <script>
 (function(){
-  const DURATION = 30_000; // 30 секунд
-  const startBtn = document.getElementById('startBtn');
+  const DURATION = 30_000; // миллисекунды
+  const btn = document.getElementById('btn');
   const timerEl = document.getElementById('timer');
-  const stateText = document.getElementById('stateText');
-  const viewer = document.getElementById('viewer');
-  const badge = document.getElementById('badge');
-
-  const mainAudio = document.getElementById('mainAudio');
-  const finalAudio = document.getElementById('finalAudio');
-
-  // scary и финальные имг-элементы
-  const scaryImgs = [document.getElementById('sc1'), document.getElementById('sc2'), document.getElementById('sc3')];
-  const finalImgs = [document.getElementById('f1'), document.getElementById('f2'), document.getElementById('f3')];
+  const logEl = document.getElementById('log');
+  const audio = document.getElementById('mainAudio');
 
   let started = false;
-  let startTime = 0;
+  let startTs = 0;
 
-  // Запрет правого клика на странице (можно убрать)
-  window.addEventListener('contextmenu', e => e.preventDefault());
-
-  // beforeunload предупредит при попытке закрыть вкладку (браузер сам покажет)
-  window.addEventListener('beforeunload', function(e){
-    if (started && performance.now() - startTime < DURATION) {
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    }
-  });
-
-  function showOnly(arr, idx) {
-    arr.forEach((el,i)=> el.classList.toggle('show', i===idx));
+  // Показываем лог (и console.log)
+  function log(msg){
+    console.log(msg);
+    logEl.textContent = msg;
   }
 
-  function enterFullscreen() {
-    const el = document.documentElement;
-    if (el.requestFullscreen) return el.requestFullscreen();
-    if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
-    if (el.msRequestFullscreen) return el.msRequestFullscreen();
-  }
+  // Универсальная функция старта таймера (работает даже если аудио не запустилось)
+  function startTimer() {
+    startTs = performance.now();
+    const endTs = startTs + DURATION;
 
-  startBtn.addEventListener('click', async () => {
-    if (started) return;
-    started = true;
-    startBtn.disabled = true;
-    startBtn.textContent = 'Идёт...';
-    stateText.textContent = 'Запущено';
-
-    // Попытка полноэкранного режима
-    try { await enterFullscreen(); } catch(e){ /* игнорируем */ }
-
-    // Запуск основного аудио (пользовательский клик разрешает)
-    try {
-      mainAudio.volume = 1.0; // максимум по API
-      await mainAudio.play();
-    } catch(e){
-      console.warn('audio play failed', e);
-    }
-
-    // Показать viewer
-    viewer.classList.add('show');
-    badge.textContent = Math.round(DURATION/1000) + ' s';
-
-    startTime = performance.now();
-    const endTime = startTime + DURATION;
-
-    // Меняем scary картинки по прогрессу
-    function onFrame(){
+    function frame() {
       const now = performance.now();
-      const remain = Math.max(0, endTime - now);
-      timerEl.textContent = (remain/1000).toFixed(1) + ' s';
-      badge.textContent = Math.ceil(remain/1000) + ' s';
-
-      const elapsed = now - startTime;
-      // index в зависимости от прогресса
-      const ratio = Math.min(1, elapsed / DURATION);
-      const idx = Math.min(scaryImgs.length - 1, Math.floor(ratio * scaryImgs.length));
-      showOnly(scaryImgs, idx);
+      const remain = Math.max(0, endTs - now);
+      timerEl.textContent = (remain / 1000).toFixed(1) + ' s';
 
       if (remain > 0) {
-        requestAnimationFrame(onFrame);
+        requestAnimationFrame(frame);
       } else {
-        // Конец шоу
-        endShow();
+        timerEl.textContent = 'Конец!';
+        log('Таймер завершён.');
+        // Место для действий после окончания (например, переключить аудио/показать фото)
       }
     }
-    requestAnimationFrame(onFrame);
-  });
-
-  async function endShow(){
-    stateText.textContent = 'Завершено';
-    // Остановим основное аудио
-    try { mainAudio.pause(); mainAudio.currentTime = 0; } catch(e){}
-
-    // Запустим финальное аудио на максимуме громкости внутри страницы
-    try {
-      finalAudio.volume = 1.0; // максимум, не поднимает системную громкость
-      finalAudio.loop = true;
-      await finalAudio.play();
-    } catch(e){
-      console.warn('final audio play failed', e);
-    }
-
-    // Показать финальные фото (слайд-шоу)
-    let idx = 0;
-    function showFinal(){
-      showOnly(finalImgs, idx);
-      idx = (idx + 1) % finalImgs.length;
-      // переключение каждые 2.5 секунды
-      setTimeout(showFinal, 2500);
-    }
-    showFinal();
-
-    // Обновим badge
-    badge.textContent = 'Финал';
+    requestAnimationFrame(frame);
   }
 
+  // Обработчик клика — пользовательское действие
+  btn.addEventListener('click', async () => {
+    if (started) return;
+    started = true;
+    btn.disabled = true;
+    log('Запуск...');
+
+    // Сначала пытаемся запустить аудио — но если play() выбросит ошибку,
+    // мы всё равно запустим таймер ниже (в finally).
+    try {
+      audio.volume = 1.0; // максимум по Web Audio API
+      audio.currentTime = 0;
+      await audio.play();
+      log('Аудио запущено успешно.');
+    } catch (err) {
+      // Частая причина: неправильный путь к файлу или политика браузера.
+      console.error('Ошибка при play():', err);
+      // Показываем пользователю предупреждение, но не мешаем таймеру стартовать.
+      alert('Аудио не удалось проиграть. Проверь путь к файлу в assets/main-song.mp3 или разрешения браузера.');
+      log('Аудио не запущено (см. консоль). Таймер всё равно стартует.');
+    } finally {
+      // запускаем таймер в любом случае
+      startTimer();
+    }
+  });
+
+  // Полезные проверки, которые можно увидеть в консоли
+  // Проверяем, что у audio есть хотя бы один источник
+  if (!audio.querySelector('source')) {
+    console.warn('В <audio> нет <source>. Положи файл assets/main-song.mp3 и убедись в названии.');
+    log('Внимание: audio source не найден.');
+  } else {
+    console.log('Audio source обнаружен:', audio.querySelector('source').src);
+  }
+
+  // hint: если у тебя не работает локально, запусти простой локальный сервер:
+  // python -m http.server 8000
+  // и открой http://localhost:8000 в браузере.
 })();
 </script>
 </body>
