@@ -3,7 +3,45 @@
 <head>
   <meta charset="utf-8">
   <title>30-секундное шоу</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #111;
+      color: #fff;
+    }
+    .card {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    button {
+      background: red;
+      border: none;
+      padding: 15px 30px;
+      font-size: 20px;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    #timer {
+      font-size: 32px;
+      margin-top: 15px;
+    }
+    #photos img {
+      max-width: 100%;
+      margin-top: 15px;
+    }
+  </style>
 </head>
 <body>
   <div class="card">
@@ -18,6 +56,60 @@
   <audio id="mainAudio" src="assets/main-song.mp3" preload="auto"></audio>
   <audio id="finalAudio" src="assets/final-song.mp3" preload="auto"></audio>
 
-  <script src="script.js"></script>
+  <script>
+    const btn = document.getElementById("startBtn");
+    const timerEl = document.getElementById("timer");
+    const photosEl = document.getElementById("photos");
+
+    const mainAudio = document.getElementById("mainAudio");
+    const finalAudio = document.getElementById("finalAudio");
+
+    let started = false;
+
+    btn.addEventListener("click", async () => {
+      if (started) return;
+      started = true;
+      btn.disabled = true;
+      btn.textContent = "Идёт...";
+
+      try {
+        await mainAudio.play();
+      } catch (e) {
+        console.log("Ошибка запуска звука:", e);
+      }
+
+      let timeLeft = 30.0;
+      timerEl.textContent = timeLeft.toFixed(1);
+
+      const interval = setInterval(() => {
+        timeLeft -= 0.1;
+        timerEl.textContent = Math.max(0, timeLeft).toFixed(1);
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          finishShow();
+        }
+      }, 100);
+    });
+
+    function finishShow() {
+      mainAudio.pause();
+      mainAudio.currentTime = 0;
+
+      finalAudio.volume = 1.0;
+      finalAudio.loop = true;
+      finalAudio.play();
+
+      const images = [
+        "assets/final1.jpg",
+        "assets/final2.jpg",
+        "assets/final3.jpg"
+      ];
+      let i = 0;
+      setInterval(() => {
+        photosEl.innerHTML = <img src="${images[i]}" alt="final">;
+        i = (i + 1) % images.length;
+      }, 2000);
+    }
+  </script>
 </body>
 </html>
