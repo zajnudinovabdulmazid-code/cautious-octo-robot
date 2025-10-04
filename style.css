@@ -1,62 +1,90 @@
-:root{
-  --bg:#111;
-  --card:#222;
-  --text:#fff;
-  --accent:red;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg);
-  color: var(--text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-}
-
-.card {
-  width: min(520px, 92vw);
-  background: var(--card);
-  padding: 28px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
-}
-
-.big-btn {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 14px 34px;
-  font-size: 20px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform .06s ease, opacity .12s ease;
-  margin-top: 8px;
-}
-
-.big-btn:active { transform: translateY(1px) scale(.997); }
-.big-btn[disabled] { opacity: .55; cursor: not-allowed; }
-
-#timer {
-  font-size: 36px;
-  margin-top: 18px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
 .photos {
   margin-top: 18px;
   min-height: 140px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Стили для полноэкранного режима */
+.photos:fullscreen {
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.photos:-webkit-full-screen {
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.photos:-moz-full-screen {
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.photos:-ms-fullscreen {
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Стили для изображений в полноэкранном режиме */
+.photos:fullscreen img {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.photos:-webkit-full-screen img {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.photos:-moz-full-screen img {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.photos:-ms-fullscreen img {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Обычные стили для изображений */
 .photos img {
   max-width: 100%;
   max-height: 300px;
