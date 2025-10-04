@@ -9,13 +9,14 @@
 <body>
   <main class="card" role="main" aria-labelledby="title">
     <h1 id="title">Нажми большую красную кнопку</h1>
-    <p>Кнопка запустит 30‑секундное шоу.</p>
+    <p>Кнопка запустит 30‑секундное шоу с полноэкранными изображениями.</p>
 
     <button id="startBtn" class="big-btn" aria-pressed="false">Запустить</button>
 
     <div id="timer" aria-live="polite">30.0</div>
 
-    <div id="photos" class="photos" aria-hidden="true"></div>
+    <!-- Убрали aria-hidden, так как в полноэкранном режиме это основной контент -->
+    <div id="photos" class="photos" role="region" aria-label="Галерея изображений"></div>
 
     <!-- Аудио (пути — в папке assets/) -->
     <audio id="mainAudio" src="assets/main-song.mp3" preload="auto"></audio>
