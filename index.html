@@ -24,6 +24,7 @@
 
         .container {
             text-align: center;
+            z-index: 1000;
         }
 
         #startBtn {
@@ -35,10 +36,12 @@
             cursor: pointer;
             font-size: 0;
             transition: transform 0.2s;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.7);
         }
 
         #startBtn:hover {
             transform: scale(1.1);
+            box-shadow: 0 0 70px rgba(255, 0, 0, 0.9);
         }
 
         #startBtn:active {
@@ -50,6 +53,8 @@
             margin-top: 20px;
             color: #ff0000;
             display: none;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
         }
 
         #photos {
@@ -59,7 +64,7 @@
             width: 100vw;
             height: 100vh;
             display: none;
-            z-index: 1000;
+            z-index: 100;
         }
 
         #photos img {
@@ -81,13 +86,11 @@
             z-index: 10000;
             opacity: 0;
             transition: opacity 0.5s;
+            font-weight: bold;
         }
 
         .final-message {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.9);
             color: #ff0000;
             padding: 20px;
@@ -95,17 +98,8 @@
             font-size: 24px;
             z-index: 10000;
             text-align: center;
-            display: none;
-        }
-
-        .popup {
-            position: fixed;
-            background: #ff0000;
-            color: white;
-            padding: 10px;
-            border: 2px solid #000;
-            z-index: 10000;
-            cursor: move;
+            border: 2px solid #ff0000;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -119,8 +113,13 @@
     <div id="threatContainer"></div>
     <div id="finalMessages"></div>
 
-    <audio id="mainAudio" src="assets/main-song.mp3" preload="auto"></audio>
-    <audio id="finalAudio" src="assets/final-song.mp3" preload="auto"></audio>
+    <!-- Заглушки для аудио -->
+    <audio id="mainAudio" preload="auto">
+        <source src="assets/main-song.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="finalAudio" preload="auto">
+        <source src="assets/final-song.mp3" type="audio/mpeg">
+    </audio>
 
     <script>
         const btn = document.getElementById("startBtn");
@@ -135,8 +134,14 @@
         let started = false;
         let countdownInterval = null;
         let photosInterval = null;
-        let popupInterval = null;
         let isFullscreen = false;
+
+        // Заглушки для изображений если нет реальных
+        const horrorImages = [
+            "https://source.unsplash.com/random/1920x1080/?horror,scary",
+            "https://source.unsplash.com/random/1920x1080/?dark,creepy", 
+            "https://source.unsplash.com/random/1920x1080/?ghost,night"
+        ];
 
         const threats = [
             "НЕ ПЫТАЙСЯ ВЫЙТИ!",
@@ -155,15 +160,9 @@
             "ТВОЙ КОМПЬЮТЕР ЗАРАЖЕН!",
             "НЕ ВЫКЛЮЧАЙ КОМПЬЮТЕР!",
             "ОНИ ИДУТ ЗА ТОБОЙ!",
-            "ПРОВЕРЬ ЗАДВЕРЬ!",
+            "ПРОВЕРЬ ЗА ДВЕРЬЮ!",
             "ТЫ НЕ ОДИН В КОМНАТЕ!",
             "НЕ ОБОРАЧИВАЙСЯ!"
-        ];
-
-        const horrorImages = [
-            "assets/final1.jpg",
-            "assets/final2.jpg",
-            "assets/final3.jpg"
         ];
 
         btn.addEventListener("click", async () => {
@@ -176,8 +175,13 @@
 
             await enterFullscreen();
 
-            mainAudio.volume = 1.0;
-            mainAudio.play().catch(console.error);
+            // Пытаемся включить звук, но если не получится - продолжаем без него
+            try {
+                mainAudio.volume = 1.0;
+                await mainAudio.play();
+            } catch (err) {
+                console.log("Автоплей звука заблокирован, продолжаем без звука");
+            }
 
             let timeLeft = 30.0;
             timerEl.textContent = timeLeft.toFixed(1);
@@ -197,14 +201,17 @@
 
         async function enterFullscreen() {
             try {
-                if (document.documentElement.requestFullscreen) {
-                    await document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    await document.documentElement.webkitRequestFullscreen();
+                const element = document.documentElement;
+                if (element.requestFullscreen) {
+                    await element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    await element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) {
+                    await element.msRequestFullscreen();
                 }
                 isFullscreen = true;
             } catch (err) {
-                console.warn("Fullscreen error:", err);
+                console.warn("Полноэкранный режим не доступен:", err);
             }
         }
 
@@ -213,6 +220,8 @@
                 document.exitFullscreen();
             } else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
             }
             isFullscreen = false;
         }
@@ -222,7 +231,7 @@
             
             function showNextImage() {
                 const img = document.createElement('img');
-                img.src = horrorImages[currentImage];
+                img.src = horrorImages[currentImage] + '&' + Date.now(); // Кэш-бастер
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'cover';
@@ -234,7 +243,7 @@
             }
 
             showNextImage();
-            photosInterval = setInterval(showNextImage, 2000);
+            photosInterval = setInterval(showNextImage, 1500);
         }
 
         function showThreat() {
@@ -250,93 +259,122 @@
             setTimeout(() => {
                 threat.style.opacity = '0';
                 setTimeout(() => {
-                    threatContainer.removeChild(threat);
+                    if (threat.parentNode) {
+                        threatContainer.removeChild(threat);
+                    }
                 }, 500);
             }, 3000);
         }
 
         function createScreamingPopup() {
-            const popup = window.open('', '_blank', 
-                `width=400,height=300,left=${Math.random() * 500},top=${Math.random() * 500}`
-            );
-            
-            if (popup) {
-                popup.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>ВНИМАНИЕ!</title>
-                        <style>
-                            body {
-                                background: #ff0000;
-                                color: white;
-                                font-family: Arial;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                height: 100vh;
-                                margin: 0;
-                                font-size: 24px;
-                                text-align: center;
-                                cursor: move;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div>YOU ARE AN IDIOT!</div>
-                        <script>
-                            setInterval(() => {
-                                window.moveBy(Math.random() * 20 - 10, Math.random() * 20 - 10);
-                            }, 100);
-                       <\/script>
-                    </body>
-                    </html>
-                `);
+            try {
+                const width = 400;
+                const height = 300;
+                const left = Math.random() * (screen.width - width);
+                const top = Math.random() * (screen.height - height);
+                
+                const popup = window.open('', '_blank', 
+                    `width=${width},height=${height},left=${left},top=${top},scrollbars=no,resizable=no`
+                );
+                
+                if (popup) {
+                    popup.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>ERROR!</title>
+                            <style>
+                                body {
+                                    background: #ff0000;
+                                    color: white;
+                                    font-family: Arial;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    height: 100vh;
+                                    margin: 0;
+                                    font-size: 24px;
+                                    text-align: center;
+                                    cursor: move;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div>YOU ARE AN IDIOT!</div>
+                            <script>
+                                setInterval(() => {
+                                    window.moveBy(Math.random() * 20 - 10, Math.random() * 20 - 10);
+                                }, 100);
+                                
+                                window.onbeforeunload = function() {
+                                    window.opener.createScreamingPopup();
+                                    window.opener.createScreamingPopup();
+                                };
+                            <\/script>
+                        </body>
+                        </html>
+                    `);
 
-                popup.onbeforeunload = function() {
-                    createScreamingPopup();
-                    createScreamingPopup();
-                    return null;
-                };
+                    // Закрываем popup чтобы избежать блокировки
+                    setTimeout(() => {
+                        try { popup.close(); } catch(e) {}
+                    }, 5000);
+                }
+            } catch (error) {
+                console.log("Popup заблокирован браузером");
             }
         }
 
         function finishShow() {
             clearInterval(photosInterval);
-            clearInterval(popupInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
             
-            mainAudio.pause();
-            finalAudio.volume = 1.0;
-            finalAudio.play();
+            try {
+                mainAudio.pause();
+                finalAudio.volume = 1.0;
+                finalAudio.play();
+            } catch (e) {}
 
             exitFullscreen();
 
-            for (let i = 0; i < 8; i++) {
+            // Показываем финальные сообщения
+            finalMessagesText.forEach((text, i) => {
                 setTimeout(() => {
                     const msg = document.createElement('div');
                     msg.className = 'final-message';
-                    msg.textContent = finalMessagesText[i];
-                    msg.style.display = 'block';
+                    msg.textContent = text;
                     msg.style.left = `${Math.random() * 50 + 25}%`;
                     msg.style.top = `${Math.random() * 50 + 25}%`;
                     finalMessages.appendChild(msg);
 
                     setTimeout(() => {
-                        finalMessages.removeChild(msg);
+                        if (msg.parentNode) {
+                            finalMessages.removeChild(msg);
+                        }
                     }, 5000);
                 }, i * 800);
-            }
+            });
 
-            for (let i = 0; i < 5; i++) {
-                setTimeout(createScreamingPopup, i * 1000);
-            }
+            // Создаем popup окна
+            setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    createScreamingPopup();
+                }
+            }, 1000);
         }
 
+        // Обработчики полноэкранного режима
         document.addEventListener('fullscreenchange', handleFullscreen);
         document.addEventListener('webkitfullscreenchange', handleFullscreen);
+        document.addEventListener('mozfullscreenchange', handleFullscreen);
+        document.addEventListener('MSFullscreenChange', handleFullscreen);
 
         function handleFullscreen() {
-            const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+            const fullscreenElement = document.fullscreenElement || 
+                                    document.webkitFullscreenElement || 
+                                    document.mozFullScreenElement || 
+                                    document.msFullscreenElement;
             
             if (!fullscreenElement && started) {
                 setTimeout(() => {
@@ -346,19 +384,416 @@
             }
         }
 
+        // Блокируем закрытие страницы
         window.addEventListener('beforeunload', (e) => {
             if (started) {
                 e.preventDefault();
-                createScreamingPopup();
-                return '';
+                e.returnValue = 'ТЫ ДЕЙСТВИТЕЛЬНО ХОЧЕШЬ ВЫЙТИ?';
+                return 'ТЫ ДЕЙСТВИТЕЛЬНО ХОЧЕШЬ ВЫЙТИ?';
             }
         });
 
-        // Предзагрузка изображений
-        horrorImages.forEach(src => {
-            const img = new Image();
-            img.src = src;
+        // Делаем функцию глобальной для popup окон
+        window.createScreamingPopup = createScreamingPopup;
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            z-index: 1000;
+        }
+
+        #startBtn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: #ff0000;
+            border: none;
+            cursor: pointer;
+            font-size: 0;
+            transition: transform 0.2s;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.7);
+        }
+
+        #startBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 70px rgba(255, 0, 0, 0.9);
+        }
+
+        #startBtn:active {
+            transform: scale(0.9);
+        }
+
+        #timer {
+            font-size: 48px;
+            margin-top: 20px;
+            color: #ff0000;
+            display: none;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+        }
+
+        #photos {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            z-index: 100;
+        }
+
+        #photos img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .threat-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.5s;
+            font-weight: bold;
+        }
+
+        .final-message {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: #ff0000;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            z-index: 10000;
+            text-align: center;
+            border: 2px solid #ff0000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="startBtn"></button>
+        <div id="timer">30.0</div>
+    </div>
+
+    <div id="photos"></div>
+    <div id="threatContainer"></div>
+    <div id="finalMessages"></div>
+
+    <!-- Заглушки для аудио -->
+    <audio id="mainAudio" preload="auto">
+        <source src="assets/main-song.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="finalAudio" preload="auto">
+        <source src="assets/final-song.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const btn = document.getElementById("startBtn");
+        const timerEl = document.getElementById("timer");
+        const photosEl = document.getElementById("photos");
+        const threatContainer = document.getElementById("threatContainer");
+        const finalMessages = document.getElementById("finalMessages");
+
+        const mainAudio = document.getElementById("mainAudio");
+        const finalAudio = document.getElementById("finalAudio");
+
+        let started = false;
+        let countdownInterval = null;
+        let photosInterval = null;
+        let isFullscreen = false;
+
+        // Заглушки для изображений если нет реальных
+        const horrorImages = [
+            "https://source.unsplash.com/random/1920x1080/?horror,scary",
+            "https://source.unsplash.com/random/1920x1080/?dark,creepy", 
+            "https://source.unsplash.com/random/1920x1080/?ghost,night"
+        ];
+
+        const threats = [
+            "НЕ ПЫТАЙСЯ ВЫЙТИ!",
+            "МЫ ВИДИМ ТЕБЯ!",
+            "ТЫ НИКУДА НЕ УЙДЕШЬ!",
+            "ОСТАВАЙСЯ С НАМИ!",
+            "ЭТО ТВОЙ КОНЕЦ!",
+            "МЫ БУДЕМ СЛЕДИТЬ ЗА ТОБОЙ!",
+            "НЕ СМОТРИ НАЗАД!",
+            "ОН УЖЕ ЗДЕСЬ!"
+        ];
+
+        const finalMessagesText = [
+            "ТЫ СМОТРЕЛ ЗАПРЕЩЕННОЕ!",
+            "МЫ НАЙДЕМ ТЕБЯ!",
+            "ТВОЙ КОМПЬЮТЕР ЗАРАЖЕН!",
+            "НЕ ВЫКЛЮЧАЙ КОМПЬЮТЕР!",
+            "ОНИ ИДУТ ЗА ТОБОЙ!",
+            "ПРОВЕРЬ ЗА ДВЕРЬЮ!",
+            "ТЫ НЕ ОДИН В КОМНАТЕ!",
+            "НЕ ОБОРАЧИВАЙСЯ!"
+        ];
+
+        btn.addEventListener("click", async () => {
+            if (started) return;
+            started = true;
+
+            btn.style.display = 'none';
+            timerEl.style.display = 'block';
+            photosEl.style.display = 'block';
+
+            await enterFullscreen();
+
+            // Пытаемся включить звук, но если не получится - продолжаем без него
+            try {
+                mainAudio.volume = 1.0;
+                await mainAudio.play();
+            } catch (err) {
+                console.log("Автоплей звука заблокирован, продолжаем без звука");
+            }
+
+            let timeLeft = 30.0;
+            timerEl.textContent = timeLeft.toFixed(1);
+
+            countdownInterval = setInterval(() => {
+                timeLeft = +(timeLeft - 0.1).toFixed(1);
+                timerEl.textContent = Math.max(0, timeLeft).toFixed(1);
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    finishShow();
+                }
+            }, 100);
+
+            startSlideShow();
         });
+
+        async function enterFullscreen() {
+            try {
+                const element = document.documentElement;
+                if (element.requestFullscreen) {
+                    await element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    await element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) {
+                    await element.msRequestFullscreen();
+                }
+                isFullscreen = true;
+            } catch (err) {
+                console.warn("Полноэкранный режим не доступен:", err);
+            }
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+            isFullscreen = false;
+        }
+
+        function startSlideShow() {
+            let currentImage = 0;
+            
+            function showNextImage() {
+                const img = document.createElement('img');
+                img.src = horrorImages[currentImage] + '&' + Date.now(); // Кэш-бастер
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                
+                photosEl.innerHTML = '';
+                photosEl.appendChild(img);
+                
+                currentImage = (currentImage + 1) % horrorImages.length;
+            }
+
+            showNextImage();
+            photosInterval = setInterval(showNextImage, 1500);
+        }
+
+        function showThreat() {
+            const threat = document.createElement('div');
+            threat.className = 'threat-message';
+            threat.textContent = threats[Math.floor(Math.random() * threats.length)];
+            threatContainer.appendChild(threat);
+
+            setTimeout(() => {
+                threat.style.opacity = '1';
+            }, 100);
+
+            setTimeout(() => {
+                threat.style.opacity = '0';
+                setTimeout(() => {
+                    if (threat.parentNode) {
+                        threatContainer.removeChild(threat);
+                    }
+                }, 500);
+            }, 3000);
+        }
+
+        function createScreamingPopup() {
+            try {
+                const width = 400;
+                const height = 300;
+                const left = Math.random() * (screen.width - width);
+                const top = Math.random() * (screen.height - height);
+                
+                const popup = window.open('', '_blank', 
+                    `width=${width},height=${height},left=${left},top=${top},scrollbars=no,resizable=no`
+                );
+                
+                if (popup) {
+                    popup.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>ERROR!</title>
+                            <style>
+                                body {
+                                    background: #ff0000;
+                                    color: white;
+                                    font-family: Arial;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    height: 100vh;
+                                    margin: 0;
+                                    font-size: 24px;
+                                    text-align: center;
+                                    cursor: move;
+                                    font-weight: bold;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div>YOU ARE AN IDIOT!</div>
+                            <script>
+                                setInterval(() => {
+                                    window.moveBy(Math.random() * 20 - 10, Math.random() * 20 - 10);
+                                }, 100);
+                                
+                                window.onbeforeunload = function() {
+                                    window.opener.createScreamingPopup();
+                                    window.opener.createScreamingPopup();
+                                };
+                            <\/script>
+                        </body>
+                        </html>
+                    `);
+
+                    // Закрываем popup чтобы избежать блокировки
+                    setTimeout(() => {
+                        try { popup.close(); } catch(e) {}
+                    }, 5000);
+                }
+            } catch (error) {
+                console.log("Popup заблокирован браузером");
+            }
+        }
+
+        function finishShow() {
+            clearInterval(photosInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            try {
+                mainAudio.pause();
+                finalAudio.volume = 1.0;
+                finalAudio.play();
+            } catch (e) {}
+
+            exitFullscreen();
+
+            // Показываем финальные сообщения
+            finalMessagesText.forEach((text, i) => {
+                setTimeout(() => {
+                    const msg = document.createElement('div');
+                    msg.className = 'final-message';
+                    msg.textContent = text;
+                    msg.style.left = `${Math.random() * 50 + 25}%`;
+                    msg.style.top = `${Math.random() * 50 + 25}%`;
+                    finalMessages.appendChild(msg);
+
+                    setTimeout(() => {
+                        if (msg.parentNode) {
+                            finalMessages.removeChild(msg);
+                        }
+                    }, 5000);
+                }, i * 800);
+            });
+
+            // Создаем popup окна
+            setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    createScreamingPopup();
+                }
+            }, 1000);
+        }
+
+        // Обработчики полноэкранного режима
+        document.addEventListener('fullscreenchange', handleFullscreen);
+        document.addEventListener('webkitfullscreenchange', handleFullscreen);
+        document.addEventListener('mozfullscreenchange', handleFullscreen);
+        document.addEventListener('MSFullscreenChange', handleFullscreen);
+
+        function handleFullscreen() {
+            const fullscreenElement = document.fullscreenElement || 
+                                    document.webkitFullscreenElement || 
+                                    document.mozFullScreenElement || 
+                                    document.msFullscreenElement;
+            
+            if (!fullscreenElement && started) {
+                setTimeout(() => {
+                    enterFullscreen();
+                    showThreat();
+                }, 100);
+            }
+        }
+
+        // Блокируем закрытие страницы
+        window.addEventListener('beforeunload', (e) => {
+            if (started) {
+                e.preventDefault();
+                e.returnValue = 'ТЫ ДЕЙСТВИТЕЛЬНО ХОЧЕШЬ ВЫЙТИ?';
+                return 'ТЫ ДЕЙСТВИТЕЛЬНО ХОЧЕШЬ ВЫЙТИ?';
+            }
+        });
+
+        // Делаем функцию глобальной для popup окон
+        window.createScreamingPopup = createScreamingPopup;
     </script>
 </body>
 </html>
